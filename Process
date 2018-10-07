@@ -1,60 +1,59 @@
-dded another data disk to the VM which is equivalent to the size of the OS disk.
+1. Add a data disk to the VM which is equivalent to the size of the OS disk.
+
 2. Performed partition on the data disk with the same format as the OS disk using below command.
-#sudo -i
-#sfdisk -d /dev/sda|sfdisk --force /dev/sdd
+  #sudo -i
+  #sfdisk -d /dev/sda|sfdisk --force /dev/sdd
 
 3. Then created ext4 FS on them
-mkfs.ext4 /dev/sdc1
-mkfs.ext4 /dev/sdc2
+  #mkfs.ext4 /dev/sdc1
+  #mkfs.ext4 /dev/sdc2
 
 4. Created Directories mkdir /_root /_root/boot to mount /dev/sdc2 and /dev/sdc1 respectively.
-#mkdir /_root
-#mount /dev/sdc2 /_root
-#mkdir /_root/boot
-#mount /dev/sdc2 /_root/boot
+  #mkdir /_root
+  #mount /dev/sdc2 /_root
+  #mkdir /_root/boot
+  #mount /dev/sdc2 /_root/boot
 
 5. Copy contents of the OS disk to these partitions using rsync.
-#rsync -avz bin dev  etc  home  lib  lib64  media  opt  root run  sbin  srv tmp  usr  var /_root/
-#rsync -avz boot/ /_root/boot/
-#mkdir /_root/proc /_root/sys
+  #rsync -avz bin dev  etc  home  lib  lib64  media  opt  root run  sbin  srv tmp  usr  var /_root/
+  #rsync -avz boot/ /_root/boot/
+  #mkdir /_root/proc /_root/sys
 
-6. Copied boot sector
-#dd if=/dev/sda of=/dev/sdc bs=1 count=512
+6. Copy boot sector
+  #dd if=/dev/sda of=/dev/sdc bs=1 count=512
 
 7. Performed chroot to update grub settings.
-#umount /_boot
-#mount /dev/sdc1 /_root/boot
-#cd /_root
-#mount -t proc proc proc
-#mount -t sysfs sys sys/
-#mount -o bind /dev/pts dev/pts/
-#mount -o bind /dev dev/
-#chroot /_root
+  #umount /_boot
+  #mount /dev/sdc1 /_root/boot
+  #cd /_root
+  #mount -t proc proc proc
+  #mount -t sysfs sys sys/
+  #mount -o bind /dev/pts dev/pts/
+  #mount -o bind /dev dev/
+  #chroot /_root
 
 8. Re-installed GRUB to reflect new UUID in the grub.cfg file.
-#yum reinstall grub2-tools
-#grub2-mkconfig -o /boot/grub2/grub.cfg
-#mkinitrd -f -v /boot/initrd-$(uname -r).img $(uname -r)
-#grub2-install /dev/sdc
+  #yum reinstall grub2-tools
+  #grub2-mkconfig -o /boot/grub2/grub.cfg
+  #mkinitrd -f -v /boot/initrd-$(uname -r).img $(uname -r)
+  #grub2-install /dev/sdc
 
 9. Make a note of the Device UUID from the below command
+  #blkid /dev/sdc1 /dev/sdc2 
 
-#blkid /dev/sdc1 /dev/sdc2 
-
-10. Update /etc/fstab entries with the UUID obtained in the above step. Also chance the type of filesystem 3rd column to ext4.
-
-UUID=de8657b8-8132-4361-a13b-c03201642fbe /                       ext4     defaults        0 0
-UUID=d3d3f329-8994-4d27-942b-6a904822f195 /boot                   ext4     defaults        0 0
+10. Update /etc/fstab entries with the UUID obtained in the above step. Also change the type of filesystem 3rd column to ext4.
+  UUID=de8657b8-8132-4361-a13b-c03201642fbe /                       ext4     defaults        0 0
+  UUID=d3d3f329-8994-4d27-942b-6a904822f195 /boot                   ext4     defaults        0 0
 
 11. Exit chroot
-#exit
-#cd /
-#umount /_root/proc/
-#umount /_root/sys/
-#umount /_root/dev
-#umount /_root/dev/pts
-#umount /_boot/
-#umount /_root/
+  #exit
+  #cd /
+  #umount /_root/proc/
+  #umount /_root/sys/
+  #umount /_root/dev
+  #umount /_root/dev/pts
+  #umount /_boot/
+  #umount /_root/
 
 12. Go to Azure Portal and detach the Data Disk. Create a new VM out of this Managed Data Disk, successfully booted and now the / partition is ext4 type.
 
